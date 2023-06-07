@@ -1,0 +1,6 @@
+{
+  "watch": ["./**/*.ts"],
+  "ext": "ts,json",
+  "ignore": ["node_modules"],
+  "exec": "tsc && node ./main.js"
+}
