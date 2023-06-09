@@ -1,10 +1,27 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { svgBuilder } from "./src/plugins/svgBuilder";
+import path from "path";
 
-// https://vitejs.dev/config/
+function resolve(url: string): string {
+  return path.resolve(__dirname, url);
+}
+
 export default defineConfig({
   server: {
     host: "0.0.0.0",
   },
-  plugins: [vue()],
+  plugins: [vue(), svgBuilder("./src/assets/imgs/")],
+  resolve: {
+    alias: {
+      "@": resolve("./src"),
+    },
+  },
+  css: {
+    preprocessorOptions: {
+      less: {
+        additionalData: "@import '@/assets/theme.less';",
+      },
+    },
+  },
 });
