@@ -7,7 +7,16 @@
       </div>
       <div class="right">
         <SvgIcon name="close" color="#fe6c6f" size="48px" class="svg-call svg-close" @click="isShow = false" />
-        <SvgIcon name="close" color="#67C23A" size="48px" class="svg-call" @click="$emit('call')" />
+        <SvgIcon
+          name="close"
+          color="#67C23A"
+          size="48px"
+          class="svg-call"
+          @click="
+            $emit('call');
+            isShow = false;
+          "
+        />
       </div>
     </div>
   </Transition>

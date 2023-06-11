@@ -17,4 +17,10 @@ export interface ResRtcType extends ResType {
 export interface RtcFunParams<T> extends ResRtcType {
   data: T;
 }
+
+export interface RtcEmitParams<T> {
+  nowUsername: string;
+  toUsername: string;
+  data: T;
+}
 export type RtcFun<T> = (params: RtcFunParams<T>) => void;

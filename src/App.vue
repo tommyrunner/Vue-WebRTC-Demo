@@ -1,5 +1,6 @@
 <template>
   <Notice ref="noticeRef" @call="onCall" />
+  <span>to:{{ userInfo.userInfo.toUserName }},{{ userInfo.userInfo.username }}</span>
   <div class="context">
     <UserList @callUser="onCallUser" />
     <div class="right show-box">
@@ -68,6 +69,10 @@ async function onCall() {
   //   return;
   // }
   if (remoteVideoRef.value) remoteVideoRef.value.$el.play();
+  // 同意方，无需提醒重新接听
+  if (userInfo.userInfo.toUserName) {
+    sendOffer(userInfo.userInfo.toUserName);
+  }
 }
 async function start(username: string) {
   sc = new SocketControl(username);
@@ -82,11 +87,8 @@ async function start(username: string) {
     await remotePc.setRemoteDescription(remoteDesc);
     let remoteAnswer = await remotePc.createAnswer();
     await remotePc.setLocalDescription(remoteAnswer);
-    sc.socket.emit(SOCKET_ON_RTC.ANSWER, {
-      data: remoteAnswer,
-      nowUsername: res.nowUsername,
-      toUsername: res.toUsername
-    });
+    console.log(userInfo.userInfo);
+    sc.emit(SOCKET_ON_RTC.ANSWER, remoteAnswer);
   });
   // 接收answer
   sc.rtc_answer(async res => {
@@ -98,14 +100,14 @@ async function start(username: string) {
   sc.rtc_candidate(async res => {
     // 回调显示
     if (!remoteVideoRef.value) return;
+    // 记录来电人
+    userInfo.userInfo.toUserName = res.toUsername;
     let video: HTMLVideoElement = remoteVideoRef.value.$el;
     remotePc.ontrack = e => {
       video.srcObject = e.streams[0];
       video.addEventListener("loadedmetadata", () => {
         // 来电话了
         if (noticeRef.value) noticeRef.value.showNotice(res.toUsername);
-        // video.play();
-        // 同意的同时向对面发送
         // if (res.toUsername) sendOffer(res.toUsername);
       });
     };
@@ -141,18 +143,15 @@ async function sendOffer(toUser: string) {
   localPc.onicecandidate = function (event) {
     console.log("localPc:", event.candidate, event);
     // 回调时，将自己candidate发给对方，对方可以直接addIceCandidate(candidate)添加可以获取流
-    if (event.candidate)
-      sc.socket.emit(SOCKET_ON_RTC.CANDIDATE, {
-        data: event.candidate,
-        toUsername: toUser,
-        nowUsername: userInfo.userInfo.username
-      });
+    if (event.candidate) sc.emit(SOCKET_ON_RTC.CANDIDATE, event.candidate);
   };
+  // 记录给谁打电话
+  userInfo.userInfo.toUserName = toUser;
   // 发起方：创建offer(成功将offer的设置当前流，并发送给接收方)
   let offer = await localPc.createOffer();
   // 建立连接，此时就会触发onicecandidate，然后注册ontrack
   await localPc.setLocalDescription(offer);
-  sc.socket.emit(SOCKET_ON_RTC.OFFER, { data: offer, toUsername: toUser, nowUsername: userInfo.userInfo.username });
+  sc.emit(SOCKET_ON_RTC.OFFER, offer);
 }
 </script>
 <style lang="less" scoped>
