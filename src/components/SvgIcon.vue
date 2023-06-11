@@ -1,5 +1,5 @@
 <template>
-  <svg :class="`fill-current ${svgClass}`" v-bind="$attrs" :style="{ color: props.color, width: props.size, height: props.size }">
+  <svg :class="`fill-current ${svgClass}`" v-bind="$attrs" :fill="color" :style="{ color: props.color, width: props.size, height: props.size }">
     <use :xlink:href="iconName" rel="external nofollow" />
   </svg>
 </template>

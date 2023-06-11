@@ -29,7 +29,7 @@ export function showDiaLog(params: DialogParamsType) {
       border-radius: 0.146rem;
       box-shadow: 0rem 0rem 0.186rem rgba(0, 0, 0, 0.1);
       z-index: 9999;
-      font-size: 0.32rem;
+      font-size: 18px;
       background-color: ${
         mergedParams.type === DIALOG_TYPE.ERROR
           ? "#fef0f0"

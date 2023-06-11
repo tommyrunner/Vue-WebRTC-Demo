@@ -4,6 +4,11 @@ export enum DIALOG_TYPE {
   WARNING = "warning",
   SUCCESS = "success", // 新增成功类型
 }
+// 消息code 
+export enum DATA_CODE {
+  OK = 200,
+  ERROR = 500,
+}
 // rtc消息on
 export enum SOCKET_ON_RTC {
   // rtc 建立连接回调
@@ -19,7 +24,10 @@ export enum SOCKET_ON_SYS {
   CONNECTION = "connection",
   // 断开socket
   DISCONNECT = "disconnect",
+  // 用户列表
   USER_LIST = "user_list",
+  // 错误显示
+  SYS_ERROR = "sys_error",
 }
 export enum SOCKET_EMIT {
   SYS_USER_LIST = "user_list",

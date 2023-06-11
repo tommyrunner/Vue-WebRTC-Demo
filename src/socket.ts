@@ -1,11 +1,12 @@
 import { Socket, io } from "socket.io-client";
-import { DIALOG_TYPE, SOCKET_ON_SYS } from "./enum";
+import { DIALOG_TYPE, SOCKET_ON_RTC, SOCKET_ON_SYS } from "./enum";
 import { useUserInfo } from "./pinia/userInfo";
+import { ResRtcType, ResType, RtcFun } from "./type";
 import { showDiaLog } from "./utils";
 
 export default class SocketControl {
-  socket: Socket | undefined;
-  username: String;
+  socket: Socket = io();
+  username: string;
   userInfo;
   constructor(username: string) {
     this.username = username;
@@ -23,60 +24,56 @@ export default class SocketControl {
       });
       this.socket.on("connect", () => {
         showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
+        this.userInfo.userInfo.username = this.username;
         res({});
-        this.sys();
+        if (!this.socket) {
+          showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });
+        } else {
+          this.sys(this.socket);
+        }
       });
     });
   }
+  getSocket() {
+    return this.socket;
+  }
   //   系统消息监听
-  sys() {
-    if (!this.socket) {
-      showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });
-      return;
-    }
-    this.socket.on(SOCKET_ON_SYS.USER_LIST, (data) => {
-      //   console.log(data);
+  sys(socket: Socket) {
+    socket.on(SOCKET_ON_SYS.USER_LIST, (data) => {
       this.userInfo.userList = data;
+    });
+    socket.on(SOCKET_ON_SYS.SYS_ERROR, (data: ResType) => {
+      showDiaLog({ type: DIALOG_TYPE.ERROR, msg: String(data.msg) });
+    });
+  }
+  rtc_offer(fun: RtcFun<RTCSessionDescription>) {
+    this.socket.on(SOCKET_ON_RTC.OFFER, async (res: ResRtcType) => {
+      // 接收倒offer
+      console.log(`接收倒 ${res.toUsername} offer`);
+      fun({
+        ...res,
+        data: res.data,
+      });
+    });
+  }
+  rtc_answer(fun: RtcFun<RTCSessionDescriptionInit>) {
+    this.socket.on(SOCKET_ON_RTC.ANSWER, async (res: ResRtcType) => {
+      // 接收倒answer
+      console.log(`接收倒 ${res.toUsername} answer`);
+      fun({
+        ...res,
+        data: res.data,
+      });
+    });
+  }
+  rtc_candidate(fun: RtcFun<RTCIceCandidateInit>) {
+    this.socket.on(SOCKET_ON_RTC.CANDIDATE, async (res: ResRtcType) => {
+      // 接收倒answer
+      console.log(`建立连接 ${res.toUsername} candidate回调`);
+      fun({
+        ...res,
+        data: res.data,
+      });
     });
   }
 }
-
-// export default function SocketOn(socket: Socket) {
-//   socket.on("connect", () => {
-//     LoginRef.value.close();
-//     showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
-//     initVideo(localVideoRef.value);
-//   });
-//   socket.on("user_list", (data) => {
-//     console.log(data);
-//   });
-//   socket.on("pc offer", async (res: { data: RTCSessionDescriptionInit }) => {
-//     // 接收倒offer
-//     console.log("接收倒offer", res);
-//     let remoteDesc = res.data;
-//     // 创建 answer
-//     await remotePc.setRemoteDescription(remoteDesc);
-//     let remoteAnswer = await remotePc.createAnswer();
-//     await remotePc.setLocalDescription(remoteAnswer);
-//     socket.emit("pc answer", { data: remoteAnswer, username: stateData.toUserName });
-//   });
-//   socket.on("pc answer", async (res: { data: RTCSessionDescription }) => {
-//     console.log("local接收到 answer", res);
-//     let remoteAnswer = res.data;
-//     await localPc.setRemoteDescription(remoteAnswer);
-//   });
-//   socket.on("pc candidate", async (res: { data: RTCIceCandidateInit }) => {
-//     let candidate = res.data;
-//     console.log("local接收到 candidate：", candidate);
-//     // 注意需要先注册监听事件，再添加ice
-//     remotePc.ontrack = (e) => {
-//       remoteVideoRef.value.srcObject = e.streams[0];
-//       remoteVideoRef.value.addEventListener("loadedmetadata", () => {
-//         remoteVideoRef.value.play();
-//         // 同意的同时向对面发送
-//         sendOffer();
-//       });
-//     };
-//     await remotePc.addIceCandidate(candidate);
-//   });
-// }

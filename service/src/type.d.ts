@@ -5,3 +5,11 @@ export interface DataParamsType {
   msg?: String;
   data?: any;
 }
+export interface ResType {
+  data: any;
+}
+export interface ResRtcType extends ResType {
+  // 发送用户id
+  toUsername: string;
+  nowUsername: string;
+}

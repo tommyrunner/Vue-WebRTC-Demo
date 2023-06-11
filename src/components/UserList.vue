@@ -7,7 +7,8 @@
           <SvgIcon name="user" size="22" />
           <span class="name">{{ item.username }}</span>
         </div>
-        <AppButton>拨打</AppButton>
+        <AppButton @click="$emit('callUser', item.username)" v-if="item.username !== userInfo.userInfo.username">拨打</AppButton>
+        <span v-else class="now">当前</span>
       </div>
     </div>
   </div>
@@ -41,6 +42,12 @@ let userInfo = useUserInfo();
       height: 32px;
       padding: 12px;
       margin-bottom: 12px;
+      .now {
+        font-size: 12px;
+        color: @color-success;
+        font-weight: bold;
+        width: 10%;
+      }
       .left {
         display: flex;
         align-items: center;

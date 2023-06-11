@@ -7,8 +7,8 @@ export const useUserInfo = defineStore("userInfo", {
     return {
       userList: [] as UserItem[],
       userInfo: {
-        username: "1",
-        toUserName: "2",
+        username: "",
+        toUserName: "",
       },
     };
   },
