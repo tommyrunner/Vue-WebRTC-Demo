@@ -16,7 +16,9 @@ export enum SOCKET_ON_RTC {
   // 发起者发送offer
   OFFER = "offer",
   // 接收者发送answer
-  ANSWER = "answer"
+  ANSWER = "answer",
+  // 挂断通话
+  USER_OFF = "user_off"
 }
 // 系统消息on
 export enum SOCKET_ON_SYS {
@@ -35,4 +37,16 @@ export enum SOCKET_EMIT {
 export enum CALL_TYPE {
   SENDER = "sender",
   RECIVER = "reciver"
+}
+export enum CALL_STATE {
+  // 等待
+  WAIT = 0,
+  // 发起通话中
+  SEND = 1,
+  // 连接成功
+  CONNECT = 2,
+  // 拒绝通话
+  REFUSE = -1,
+  // 挂断
+  OFF = -2
 }

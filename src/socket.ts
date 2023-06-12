@@ -24,6 +24,7 @@ export default class SocketControl {
       });
       this.socket.on("connect", () => {
         showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
+        // 储存当前用户
         this.userInfo.userInfo.username = this.username;
         res({});
         if (!this.socket) {
@@ -55,33 +56,39 @@ export default class SocketControl {
     };
     this.socket.emit(key, params);
   }
+  user_refus(fun: RtcFun) {
+    this.socket.on(SOCKET_ON_RTC.USER_OFF, async (res: Required<ResRtcType>) => {
+      // 挂断通话
+      console.log(`挂断通话 ${res.toUsername}`);
+      fun({
+        ...res
+      });
+    });
+  }
   rtc_offer(fun: RtcFun<RTCSessionDescription>) {
-    this.socket.on(SOCKET_ON_RTC.OFFER, async (res: ResRtcType) => {
+    this.socket.on(SOCKET_ON_RTC.OFFER, async (res: Required<ResRtcType>) => {
       // 接收倒offer
       console.log(`接收倒 ${res.toUsername} offer`);
       fun({
-        ...res,
-        data: res.data
+        ...res
       });
     });
   }
   rtc_answer(fun: RtcFun<RTCSessionDescriptionInit>) {
-    this.socket.on(SOCKET_ON_RTC.ANSWER, async (res: ResRtcType) => {
+    this.socket.on(SOCKET_ON_RTC.ANSWER, async (res: Required<ResRtcType>) => {
       // 接收倒answer
       console.log(`接收倒 ${res.toUsername} answer`);
       fun({
-        ...res,
-        data: res.data
+        ...res
       });
     });
   }
   rtc_candidate(fun: RtcFun<RTCIceCandidateInit>) {
-    this.socket.on(SOCKET_ON_RTC.CANDIDATE, async (res: ResRtcType) => {
+    this.socket.on(SOCKET_ON_RTC.CANDIDATE, async (res: Required<ResRtcType>) => {
       // 接收倒answer
       console.log(`建立连接 ${res.toUsername} candidate回调`);
       fun({
-        ...res,
-        data: res.data
+        ...res
       });
     });
   }

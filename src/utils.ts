@@ -13,7 +13,7 @@ export function showDiaLog(params: DialogParamsType) {
       msg: "",
       duration: 800,
       type: DIALOG_TYPE.INFO,
-      autoClose: true,
+      autoClose: true
     },
     params
   );
@@ -54,7 +54,7 @@ export function showDiaLog(params: DialogParamsType) {
   alertBox.animate([{ left: "-100%" }, { left: "50%" }], {
     duration: mergedParams.duration,
     fill: "forwards",
-    easing: "ease-in-out",
+    easing: "ease-in-out"
   });
   if (!mergedParams.autoClose) return;
   timeInt1 = setTimeout(() => {
@@ -62,7 +62,7 @@ export function showDiaLog(params: DialogParamsType) {
       alertBox.animate([{ left: "50%" }, { left: "150%" }], {
         duration: 400,
         fill: "forwards",
-        easing: "ease-in-out",
+        easing: "ease-in-out"
       });
     timeInt1 = setTimeout(() => {
       if (alertBox) alertBox.remove();

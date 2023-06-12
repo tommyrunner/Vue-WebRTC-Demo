@@ -7,7 +7,12 @@
           <SvgIcon name="user" size="22" />
           <span class="name">{{ item.username }}</span>
         </div>
-        <AppButton @click="$emit('callUser', item.username)" v-if="item.username !== userInfo.userInfo.username">拨打</AppButton>
+        <AppButton
+          @click="$emit('callUser', item.username)"
+          v-if="item.username !== userInfo.userInfo.username"
+          v-show="callState === CALL_STATE.WAIT"
+          >拨打</AppButton
+        >
         <span v-else class="now">当前</span>
       </div>
     </div>
@@ -17,7 +22,12 @@
 import SvgIcon from "./SvgIcon.vue";
 import AppButton from "./AppButton.vue";
 import { useUserInfo } from "@/pinia/userInfo";
+import { CALL_STATE, CALL_TYPE } from "@/enum";
 let userInfo = useUserInfo();
+interface PropsType {
+  callState: CALL_STATE;
+}
+const props = withDefaults(defineProps<PropsType>(), {});
 </script>
 <style lang="less" scoped>
 .user-list {

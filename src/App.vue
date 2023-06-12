@@ -1,9 +1,12 @@
 <template>
   <Notice ref="noticeRef" @call="onCall" />
   <div class="context">
-    <UserList @callUser="onCallUser" />
+    <UserList @callUser="onCallUser" :callState="callState" />
     <div class="right show-box">
-      <SvgIcon name="close" class="close" size="48" />
+      <div class="close">
+        <span class="toast">{{ toast }}</span>
+        <SvgIcon name="close" size="48" color="#fe6c6f" @click="onOffCall" />
+      </div>
       <!-- 本地视频 -->
       <AppVideo class="local-video" ref="localVideoRef" style="opacity: 0.03" />
       <!-- remote视频 -->
@@ -24,9 +27,10 @@ import SvgIcon from "./components/SvgIcon.vue";
 import AppVideo from "./components/AppVideo.vue";
 import Login from "./components/Login.vue";
 import SocketControl from "./socket";
-import { DIALOG_TYPE, SOCKET_ON_RTC, CALL_TYPE } from "./enum";
+import { DIALOG_TYPE, SOCKET_ON_RTC, CALL_TYPE, CALL_STATE } from "./enum";
 import { showDiaLog } from "./utils";
 import { useUserInfo } from "./pinia/userInfo";
+import { useToast } from "@/hooks/useToast";
 import Notice from "./components/Notice.vue";
 const localVideoRef = ref<InstanceType<typeof AppVideo>>();
 const remoteVideoRef = ref<InstanceType<typeof AppVideo>>();
@@ -34,7 +38,8 @@ const loginRef = ref();
 const noticeRef = ref<InstanceType<typeof Notice>>();
 const userInfo = useUserInfo();
 let sc: SocketControl;
-let isCall = false;
+let callState = ref<CALL_STATE>(CALL_STATE.WAIT);
+let [toast] = useToast(callState);
 const userMediaConfig = {
   // 音频
   // audio: true,
@@ -55,12 +60,14 @@ const rtcConfig: RTCConfiguration = {
 };
 let localStream: MediaStream;
 let localPc: RTCPeerConnection;
-let remotePc = new RTCPeerConnection(rtcConfig);
+let remotePc: RTCPeerConnection;
 function onLogin(username: string) {
+  // 刚进入刷新remote，准备对方的pc连接
+  remotePc = new RTCPeerConnection(rtcConfig);
   start(username);
 }
 function onCallUser(toUser: string) {
-  isCall = true; // 记录当前用户是拨打用户
+  callState.value = CALL_STATE.SEND; // 记录当前用户是拨打用户
   sendOffer(toUser, CALL_TYPE.SENDER);
 }
 // 接收对方的offer并同意通话
@@ -69,7 +76,8 @@ async function onCall() {
     let video = remoteVideoRef.value.$el;
     if (remoteVideoRef.value) video.play();
     // 同意方，无需提醒重新接听
-    if (userInfo.userInfo.toUserName && !isCall) {
+    if (userInfo.userInfo.toUserName && callState.value !== CALL_STATE.SEND) {
+      callState.value = CALL_STATE.CONNECT; // 同意通话，并设置自己状态为通话中
       sendOffer(userInfo.userInfo.toUserName, CALL_TYPE.RECIVER);
     }
   }
@@ -80,14 +88,22 @@ async function start(username: string) {
   loginRef.value.close();
   // 初始化本地video
   if (localVideoRef.value) initVideo(localVideoRef.value.$el);
+  // 监听到对面挂断了电话
+  sc.user_refus(async () => {
+    // 设置接听方状态
+    callState.value = CALL_STATE.OFF;
+    setTimeout(() => {
+      callState.value = CALL_STATE.WAIT;
+    }, 1000);
+  });
   // 接收offer创建answer转发
   sc.rtc_offer(async res => {
     // 创建 answer
     const remoteDesc = res.data;
+    remotePc = new RTCPeerConnection(rtcConfig);
     await remotePc.setRemoteDescription(remoteDesc);
     let remoteAnswer = await remotePc.createAnswer();
     await remotePc.setLocalDescription(remoteAnswer);
-    console.log(userInfo.userInfo);
     sc.emit(SOCKET_ON_RTC.ANSWER, remoteAnswer, res.callType);
   });
   // 接收answer
@@ -111,6 +127,7 @@ async function start(username: string) {
         if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
         else if (noticeRef.value) {
           video.play();
+          callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
         }
       });
     };
@@ -118,6 +135,14 @@ async function start(username: string) {
     const candidate = res.data;
     await remotePc.addIceCandidate(candidate);
   });
+}
+function onOffCall() {
+  // 设置接听方状态
+  callState.value = CALL_STATE.OFF;
+  setTimeout(() => {
+    callState.value = CALL_STATE.WAIT;
+  }, 1000);
+  sc.emit(SOCKET_ON_RTC.USER_OFF, {});
 }
 async function initVideo(video: HTMLVideoElement) {
   if (!video) return;
@@ -185,12 +210,21 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
       z-index: 2;
       bottom: 5%;
       left: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       transform: translateX(-50%);
-      transition: 0.22s;
-      cursor: pointer;
-      filter: drop-shadow(1px 1px 5px rgba(240, 87, 87, 0.485));
-      &:active {
-        transform: translateX(-50%) scale(0.9);
+      .svg-icon {
+        transition: 0.22s;
+        cursor: pointer;
+        filter: drop-shadow(1px 1px 5px rgba(240, 87, 87, 0.485));
+        &:active {
+          transform: scale(0.9);
+        }
+      }
+      span {
+        color: gainsboro;
+        margin-bottom: 12px;
       }
     }
   }

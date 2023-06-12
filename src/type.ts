@@ -25,4 +25,4 @@ export interface RtcEmitParams<T> {
   data: T;
   callType?: CALL_TYPE;
 }
-export type RtcFun<T> = (params: RtcFunParams<T>) => void;
+export type RtcFun<T = undefined> = (params: RtcFunParams<T>) => void;

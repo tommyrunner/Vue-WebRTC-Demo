@@ -9,7 +9,9 @@ export enum SOCKET_ON_RTC {
   // 发起者发送offer
   OFFER = "offer",
   // 接收者发送answer
-  ANSWER = "answer"
+  ANSWER = "answer",
+  // 挂断通话
+  USER_OFF = "user_off"
 }
 // 系统消息on
 export enum SOCKET_ON_SYS {
