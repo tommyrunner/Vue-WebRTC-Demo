@@ -1,14 +1,13 @@
 <template>
   <Notice ref="noticeRef" @call="onCall" />
-  <span>to:{{ userInfo.userInfo.toUserName }},{{ userInfo.userInfo.username }}</span>
   <div class="context">
     <UserList @callUser="onCallUser" />
     <div class="right show-box">
       <SvgIcon name="close" class="close" size="48" />
       <!-- 本地视频 -->
-      <AppVideo class="local-video" ref="localVideoRef" />
+      <AppVideo class="local-video" ref="localVideoRef" style="opacity: 0.03" />
       <!-- remote视频 -->
-      <AppVideo class="remote-video" ref="remoteVideoRef" />
+      <AppVideo class="remote-video" ref="remoteVideoRef" style="opacity: 0.03" />
     </div>
   </div>
   <Login @login="onLogin" ref="loginRef" />
@@ -25,7 +24,7 @@ import SvgIcon from "./components/SvgIcon.vue";
 import AppVideo from "./components/AppVideo.vue";
 import Login from "./components/Login.vue";
 import SocketControl from "./socket";
-import { DIALOG_TYPE, SOCKET_ON_RTC } from "./enum";
+import { DIALOG_TYPE, SOCKET_ON_RTC, CALL_TYPE } from "./enum";
 import { showDiaLog } from "./utils";
 import { useUserInfo } from "./pinia/userInfo";
 import Notice from "./components/Notice.vue";
@@ -35,6 +34,7 @@ const loginRef = ref();
 const noticeRef = ref<InstanceType<typeof Notice>>();
 const userInfo = useUserInfo();
 let sc: SocketControl;
+let isCall = false;
 const userMediaConfig = {
   // 音频
   // audio: true,
@@ -60,18 +60,18 @@ function onLogin(username: string) {
   start(username);
 }
 function onCallUser(toUser: string) {
-  sendOffer(toUser);
+  isCall = true; // 记录当前用户是拨打用户
+  sendOffer(toUser, CALL_TYPE.SENDER);
 }
 // 接收对方的offer并同意通话
 async function onCall() {
-  // if (!remoteRes) {
-  //   showDiaLog({ type: DIALOG_TYPE.ERROR, msg: "对方已经挂断!" });
-  //   return;
-  // }
-  if (remoteVideoRef.value) remoteVideoRef.value.$el.play();
-  // 同意方，无需提醒重新接听
-  if (userInfo.userInfo.toUserName) {
-    sendOffer(userInfo.userInfo.toUserName);
+  if (remoteVideoRef.value) {
+    let video = remoteVideoRef.value.$el;
+    if (remoteVideoRef.value) video.play();
+    // 同意方，无需提醒重新接听
+    if (userInfo.userInfo.toUserName && !isCall) {
+      sendOffer(userInfo.userInfo.toUserName, CALL_TYPE.RECIVER);
+    }
   }
 }
 async function start(username: string) {
@@ -88,7 +88,7 @@ async function start(username: string) {
     let remoteAnswer = await remotePc.createAnswer();
     await remotePc.setLocalDescription(remoteAnswer);
     console.log(userInfo.userInfo);
-    sc.emit(SOCKET_ON_RTC.ANSWER, remoteAnswer);
+    sc.emit(SOCKET_ON_RTC.ANSWER, remoteAnswer, res.callType);
   });
   // 接收answer
   sc.rtc_answer(async res => {
@@ -107,8 +107,11 @@ async function start(username: string) {
       video.srcObject = e.streams[0];
       video.addEventListener("loadedmetadata", () => {
         // 来电话了
-        if (noticeRef.value) noticeRef.value.showNotice(res.toUsername);
-        // if (res.toUsername) sendOffer(res.toUsername);
+        // 如果是发起者需要对方同意，如果是接收者直接播放
+        if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
+        else if (noticeRef.value) {
+          video.play();
+        }
       });
     };
     // 添加ice
@@ -128,7 +131,7 @@ async function initVideo(video: HTMLVideoElement) {
     console.log("getDisplayMedia() error: ", e);
   }
 }
-async function sendOffer(toUser: string) {
+async function sendOffer(toUser: string, callType: CALL_TYPE) {
   if (!sc.socket) {
     showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });
     return;
@@ -143,7 +146,7 @@ async function sendOffer(toUser: string) {
   localPc.onicecandidate = function (event) {
     console.log("localPc:", event.candidate, event);
     // 回调时，将自己candidate发给对方，对方可以直接addIceCandidate(candidate)添加可以获取流
-    if (event.candidate) sc.emit(SOCKET_ON_RTC.CANDIDATE, event.candidate);
+    if (event.candidate) sc.emit(SOCKET_ON_RTC.CANDIDATE, event.candidate, callType);
   };
   // 记录给谁打电话
   userInfo.userInfo.toUserName = toUser;
@@ -151,7 +154,7 @@ async function sendOffer(toUser: string) {
   let offer = await localPc.createOffer();
   // 建立连接，此时就会触发onicecandidate，然后注册ontrack
   await localPc.setLocalDescription(offer);
-  sc.emit(SOCKET_ON_RTC.OFFER, offer);
+  sc.emit(SOCKET_ON_RTC.OFFER, offer, callType);
 }
 </script>
 <style lang="less" scoped>

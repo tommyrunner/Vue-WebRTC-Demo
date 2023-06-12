@@ -5,6 +5,7 @@ import { SOCKET_EMIT, SOCKET_ON_SYS } from "./enum";
 import SocketCall from "./on";
 import initApp from "./config";
 import { $log } from "./utils";
+import { Socket } from "socket.io";
 let app = express();
 // 初始化应用
 let io = initApp(app);
@@ -22,9 +23,9 @@ io.on(SOCKET_ON_SYS.CONNECTION, function (socket) {
     return;
   }
   // 连接管理
-  if (clients.some((v) => v.username === username)) {
+  if (clients.some(v => v.username === username)) {
     console.log(`${username} 重新连接`);
-    clients = clients.filter((c) => username !== username);
+    clients = clients.filter(c => username !== username);
   }
   clients.push({ userId: socket.id, username });
   $log(`---${username}---(连接)`);
@@ -37,7 +38,7 @@ io.on(SOCKET_ON_SYS.CONNECTION, function (socket) {
   socket.on(SOCKET_ON_SYS.DISCONNECT, () => {
     $log(`----${username}----(断开连接)`);
     // 每次连接发送用户列表
-    clients = clients.filter((c) => c.username !== username);
+    clients = clients.filter(c => c.username !== username);
     io.to(room).emit(SOCKET_EMIT.SYS_USER_LIST, clients);
   });
 });

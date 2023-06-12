@@ -1,5 +1,5 @@
 import { Socket, io } from "socket.io-client";
-import { DIALOG_TYPE, SOCKET_ON_RTC, SOCKET_ON_SYS } from "./enum";
+import { CALL_TYPE, DIALOG_TYPE, SOCKET_ON_RTC, SOCKET_ON_SYS } from "./enum";
 import { useUserInfo } from "./pinia/userInfo";
 import { ResRtcType, ResType, RtcEmitParams, RtcFun } from "./type";
 import { showDiaLog } from "./utils";
@@ -46,11 +46,12 @@ export default class SocketControl {
       showDiaLog({ type: DIALOG_TYPE.ERROR, msg: String(data.msg) });
     });
   }
-  emit<T>(key: SOCKET_ON_RTC, data: T) {
+  emit<T>(key: SOCKET_ON_RTC, data: T, callType?: CALL_TYPE) {
     let params: RtcEmitParams<T> = {
       toUsername: this.userInfo.userInfo.toUserName,
       nowUsername: this.userInfo.userInfo.username,
-      data
+      data,
+      callType
     };
     this.socket.emit(key, params);
   }
