@@ -71,7 +71,12 @@ function onCallUser(toUser: string) {
   sendOffer(toUser, CALL_TYPE.SENDER);
 }
 // 接收对方的offer并同意通话
-async function onCall() {
+async function onCall(is: boolean) {
+  if (!is) {
+    // 拒接通话
+    sc.emit(SOCKET_ON_RTC.USER_REFUST, {});
+    return;
+  }
   if (remoteVideoRef.value) {
     let video = remoteVideoRef.value.$el;
     if (remoteVideoRef.value) video.play();
@@ -89,9 +94,21 @@ async function start(username: string) {
   // 初始化本地video
   if (localVideoRef.value) initVideo(localVideoRef.value.$el);
   // 监听到对面挂断了电话
-  sc.user_refus(async () => {
+  sc.user_off(async () => {
     // 设置接听方状态
     callState.value = CALL_STATE.OFF;
+    // 关闭remote pc通道
+    remotePc.close();
+    setTimeout(() => {
+      callState.value = CALL_STATE.WAIT;
+    }, 1000);
+  });
+  // 监听被拒绝通话
+  sc.user_refus(async () => {
+    // 设置接听方状态
+    callState.value = CALL_STATE.REFUSE;
+    // 关闭remote pc通道
+    remotePc.close();
     setTimeout(() => {
       callState.value = CALL_STATE.WAIT;
     }, 1000);
@@ -139,6 +156,8 @@ async function start(username: string) {
 function onOffCall() {
   // 设置接听方状态
   callState.value = CALL_STATE.OFF;
+  // 关闭remote pc通道
+  remotePc.close();
   setTimeout(() => {
     callState.value = CALL_STATE.WAIT;
   }, 1000);

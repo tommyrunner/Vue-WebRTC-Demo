@@ -10,7 +10,7 @@
         <AppButton
           @click="$emit('callUser', item.username)"
           v-if="item.username !== userInfo.userInfo.username"
-          v-show="callState === CALL_STATE.WAIT"
+          v-show="props.callState === CALL_STATE.WAIT"
           >拨打</AppButton
         >
         <span v-else class="now">当前</span>
@@ -22,7 +22,7 @@
 import SvgIcon from "./SvgIcon.vue";
 import AppButton from "./AppButton.vue";
 import { useUserInfo } from "@/pinia/userInfo";
-import { CALL_STATE, CALL_TYPE } from "@/enum";
+import { CALL_STATE } from "@/enum";
 let userInfo = useUserInfo();
 interface PropsType {
   callState: CALL_STATE;

@@ -6,14 +6,23 @@
         <span>{{ username ? `${username}来电` : "未知用户" }}</span>
       </div>
       <div class="right">
-        <SvgIcon name="close" color="#fe6c6f" size="48px" class="svg-call svg-close" @click="isShow = false" />
+        <SvgIcon
+          name="close"
+          color="#fe6c6f"
+          size="48px"
+          class="svg-call svg-close"
+          @click="
+            $emit('call', false);
+            isShow = false;
+          "
+        />
         <SvgIcon
           name="close"
           color="#67C23A"
           size="48px"
           class="svg-call"
           @click="
-            $emit('call');
+            $emit('call', true);
             isShow = false;
           "
         />

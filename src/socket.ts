@@ -56,10 +56,19 @@ export default class SocketControl {
     };
     this.socket.emit(key, params);
   }
-  user_refus(fun: RtcFun) {
+  user_off(fun: RtcFun) {
     this.socket.on(SOCKET_ON_RTC.USER_OFF, async (res: Required<ResRtcType>) => {
       // 挂断通话
       console.log(`挂断通话 ${res.toUsername}`);
+      fun({
+        ...res
+      });
+    });
+  }
+  user_refus(fun: RtcFun) {
+    this.socket.on(SOCKET_ON_RTC.USER_REFUST, async (res: Required<ResRtcType>) => {
+      // 挂断通话
+      console.log(`拒绝 ${res.toUsername} 通话`);
       fun({
         ...res
       });

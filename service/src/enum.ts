@@ -11,7 +11,9 @@ export enum SOCKET_ON_RTC {
   // 接收者发送answer
   ANSWER = "answer",
   // 挂断通话
-  USER_OFF = "user_off"
+  USER_OFF = "user_off",
+  // 拒绝通话
+  USER_REFUST = "user_refust"
 }
 // 系统消息on
 export enum SOCKET_ON_SYS {

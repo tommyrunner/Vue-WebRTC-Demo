@@ -73,4 +73,19 @@ export default function SocketCall(socket: Socket, username: string, room: strin
       $log(`---挂断通话:用户失联---(${data.toUsername})`);
     }
   });
+  // 用法发起挂断电话
+  socket.on(SOCKET_ON_RTC.USER_REFUST, (data: ResRtcType) => {
+    $log(`----${data.nowUsername}----(挂断通话)`);
+    let user = clients.find(c => c.username === data.toUsername);
+    if (user) {
+      let params: ResRtcType = {
+        data: null,
+        nowUsername: user.username,
+        toUsername: data.toUsername
+      };
+      socket.to(user.userId).emit(SOCKET_ON_RTC.USER_REFUST, params);
+    } else {
+      $log(`---挂断通话:用户失联---(${data.toUsername})`);
+    }
+  });
 }
