@@ -2,7 +2,7 @@ import { CALL_STATE } from "@/enum";
 import { Ref, ref, watch } from "vue";
 
 export function useToast(state: Ref<CALL_STATE>) {
-  let toast = ref("耍帅中...");
+  let toast = ref("...");
   watch(state, () => {
     switch (state.value) {
       case CALL_STATE.CONNECT:
@@ -19,7 +19,7 @@ export function useToast(state: Ref<CALL_STATE>) {
         break;
       case CALL_STATE.WAIT:
       default:
-        toast.value = "耍帅中...";
+        toast.value = "...";
         break;
     }
   });

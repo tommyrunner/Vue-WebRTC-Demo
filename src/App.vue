@@ -5,12 +5,25 @@
     <div class="right show-box">
       <div class="close">
         <span class="toast">{{ toast }}</span>
-        <SvgIcon name="close" size="48" color="#fe6c6f" @click="onOffCall" />
+        <Transition name="close">
+          <SvgIcon name="close" size="48" color="#fe6c6f" @click="onOffCall" v-if="callState === CALL_STATE.CONNECT" />
+        </Transition>
       </div>
       <!-- 本地视频 -->
-      <AppVideo class="local-video" ref="localVideoRef" style="opacity: 0.03" />
+      <AppVideo
+        @click="videoDirection = !videoDirection"
+        :class="[videoDirection ? 'local-video' : 'remote-video']"
+        ref="localVideoRef"
+      />
       <!-- remote视频 -->
-      <AppVideo class="remote-video" ref="remoteVideoRef" style="opacity: 0.03" />
+      <Transition name="remote">
+        <AppVideo
+          @click="videoDirection = !videoDirection"
+          :class="[!videoDirection ? 'local-video' : 'remote-video']"
+          ref="remoteVideoRef"
+          v-show="callState === CALL_STATE.CONNECT"
+        />
+      </Transition>
     </div>
   </div>
   <Login @login="onLogin" ref="loginRef" />
@@ -39,6 +52,7 @@ const noticeRef = ref<InstanceType<typeof Notice>>();
 const userInfo = useUserInfo();
 let sc: SocketControl;
 let callState = ref<CALL_STATE>(CALL_STATE.WAIT);
+let videoDirection = ref(true);
 let [toast] = useToast(callState);
 const userMediaConfig = {
   // 音频
@@ -70,13 +84,13 @@ function onCallUser(toUser: string) {
   callState.value = CALL_STATE.SEND; // 记录当前用户是拨打用户
   sendOffer(toUser, CALL_TYPE.SENDER);
 }
-// 接收对方的offer并同意通话
 async function onCall(is: boolean) {
   if (!is) {
     // 拒接通话
     sc.emit(SOCKET_ON_RTC.USER_REFUST, {});
     return;
   }
+  // 接收对方的offer并同意通话
   if (remoteVideoRef.value) {
     let video = remoteVideoRef.value.$el;
     if (remoteVideoRef.value) video.play();
@@ -100,6 +114,7 @@ async function start(username: string) {
     // 关闭remote pc通道
     remotePc.close();
     setTimeout(() => {
+      userInfo.userInfo.toUserName = ""; // 清空对方信息
       callState.value = CALL_STATE.WAIT;
     }, 1000);
   });
@@ -118,6 +133,7 @@ async function start(username: string) {
     // 创建 answer
     const remoteDesc = res.data;
     remotePc = new RTCPeerConnection(rtcConfig);
+    console.log(remotePc);
     await remotePc.setRemoteDescription(remoteDesc);
     let remoteAnswer = await remotePc.createAnswer();
     await remotePc.setLocalDescription(remoteAnswer);
@@ -138,21 +154,22 @@ async function start(username: string) {
     let video: HTMLVideoElement = remoteVideoRef.value.$el;
     remotePc.ontrack = e => {
       video.srcObject = e.streams[0];
-      video.addEventListener("loadedmetadata", () => {
-        // 来电话了
-        // 如果是发起者需要对方同意，如果是接收者直接播放
-        if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
-        else if (noticeRef.value) {
-          video.play();
-          callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
-        }
-      });
+      // video.addEventListener("loadedmetadata", () => {
+      // 来电话了
+      // 如果是发起者需要对方同意，如果是接收者直接播放
+      if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
+      else {
+        video.play();
+        callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
+      }
+      // });
     };
     // 添加ice
     const candidate = res.data;
     await remotePc.addIceCandidate(candidate);
   });
 }
+
 function onOffCall() {
   // 设置接听方状态
   callState.value = CALL_STATE.OFF;
@@ -160,6 +177,7 @@ function onOffCall() {
   remotePc.close();
   setTimeout(() => {
     callState.value = CALL_STATE.WAIT;
+    userInfo.userInfo.toUserName = ""; // 清空对方信息
   }, 1000);
   sc.emit(SOCKET_ON_RTC.USER_OFF, {});
 }
@@ -208,14 +226,16 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
   box-sizing: border-box;
   padding: 12px;
   display: flex;
+  overflow: hidden;
 
   .right {
-    padding: 12px;
     flex: 1;
     position: relative;
     .local-video {
+      transition: 0.6s;
     }
     .remote-video {
+      cursor: pointer;
       position: absolute;
       z-index: 2;
       right: 3%;
@@ -223,11 +243,12 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
       width: 30% !important;
       height: 30% !important;
       box-shadow: 0px 0px 5px black;
+      transition: 0.6s;
     }
     .close {
       position: absolute;
       z-index: 2;
-      bottom: 5%;
+      bottom: 50px;
       left: 50%;
       display: flex;
       flex-direction: column;
@@ -246,6 +267,38 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
         margin-bottom: 12px;
       }
     }
+  }
+}
+.close-enter-active {
+  animation: close-in 0.5s;
+}
+.close-leave-active {
+  animation: close-in 0.5s reverse;
+}
+@keyframes close-in {
+  0% {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+.remote-enter-active {
+  animation: remote-in 0.5s;
+}
+.remote-leave-active {
+  animation: remote-in 0.5s reverse;
+}
+@keyframes remote-in {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>
