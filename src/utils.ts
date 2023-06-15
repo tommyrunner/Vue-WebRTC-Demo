@@ -3,6 +3,11 @@ import { DIALOG_TYPE } from "./enum";
 let alertBox: HTMLElement | null = null;
 let timeInt1: NodeJS.Timer | null = null;
 const timeInt2: NodeJS.Timer | null = null;
+/**
+ * 提示框
+ * @param params 提示参数
+ * @returns void
+ */
 export function showDiaLog(params: DialogParamsType) {
   // 只显示最后一个
   if (alertBox) alertBox.remove();

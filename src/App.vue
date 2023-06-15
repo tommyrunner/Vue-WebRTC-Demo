@@ -1,5 +1,4 @@
 <template>
-  <Notice ref="noticeRef" @call="onCall" />
   <div class="context">
     <UserList @callUser="onCallUser" :callState="callState" />
     <div class="right show-box">
@@ -26,11 +25,14 @@
       />
     </div>
   </div>
+  <!-- 通知窗口 -->
+  <Notice ref="noticeRef" @call="onCall" />
+  <!-- 登录窗口 -->
   <Login @login="onLogin" ref="loginRef" />
 </template>
 <script setup lang="ts">
 /**
- * TODO: 必须是域名
+ * TODO: 必须是https
  * WebRTC使用的信令服务器主要是用于建立和维护端到端通信的会话控制信息的传输。一旦会话建立成功，信令服务器就不再需要参与实时通信过程中的音视频数据传输。因此，在信令服务器关闭后，已经建立的通话仍然可以继续进行，但无法再开始新的通话或重新连接已关闭的通话。
  * 在建立WebRTC连接时，浏览器会自动处理STUN和TURN协议，以确保可靠的通信。因此，即使信令服务器关闭，已经建立的WebRTC连接仍然可以继续运行。这种设计使得WebRTC成为一种高效可靠的实时通讯技术。
  */
@@ -76,14 +78,17 @@ let localStream: MediaStream;
 let localPc: RTCPeerConnection;
 let remotePc: RTCPeerConnection;
 function onLogin(username: string) {
-  // 刚进入刷新remote，准备对方的pc连接
+  // 刚进入刷新remote，准备连接对方的pc
   remotePc = new RTCPeerConnection(rtcConfig);
   start(username);
 }
+// 发起通话
 function onCallUser(toUser: string) {
   callState.value = CALL_STATE.SEND; // 记录当前用户是拨打用户
+  // 同时发送协议给对方
   sendOffer(toUser, CALL_TYPE.SENDER);
 }
+// 接通来电
 async function onCall(is: boolean) {
   if (!is) {
     // 拒接通话
@@ -101,32 +106,52 @@ async function onCall(is: boolean) {
     }
   }
 }
+// 点击挂断
+function onOffCall() {
+  // 清空状态
+  clearState(CALL_STATE.OFF);
+  sc.emit(SOCKET_ON_RTC.USER_OFF, {});
+}
+// 初始化本地视频
+async function initVideo(video: HTMLVideoElement) {
+  if (!video) return;
+  try {
+    // userMediaConfig ,getDisplayMedia共享屏幕
+    let stream = await navigator.mediaDevices.getUserMedia(userMediaConfig);
+    // let stream = await navigator.mediaDevices.getDisplayMedia();
+    video.srcObject = stream;
+    localStream = stream;
+    video.play();
+  } catch (e) {
+    console.log("getDisplayMedia() error: ", e);
+  }
+}
+// 清空状态
+function clearState(state: CALL_STATE) {
+  // 设置状态
+  callState.value = state;
+  // 关闭remote pc通道
+  remotePc.close();
+  setTimeout(() => {
+    userInfo.userInfo.toUserName = ""; // 清空对方信息
+    callState.value = CALL_STATE.WAIT; // 归回状态
+  }, 1000);
+}
+// 开始接听rtc协议连接
 async function start(username: string) {
   sc = new SocketControl(username);
-  await sc.connect();
   loginRef.value.close();
   // 初始化本地video
   if (localVideoRef.value) initVideo(localVideoRef.value.$el);
-  // 监听到对面挂断了电话
+  // 监听《接收者》是否挂断
   sc.user_off(async () => {
-    // 设置接听方状态
-    callState.value = CALL_STATE.OFF;
-    // 关闭remote pc通道
-    remotePc.close();
-    setTimeout(() => {
-      userInfo.userInfo.toUserName = ""; // 清空对方信息
-      callState.value = CALL_STATE.WAIT;
-    }, 1000);
+    // 清空状态
+    clearState(CALL_STATE.OFF);
   });
-  // 监听被拒绝通话
+  // 监听《接收者》是否拒接
   sc.user_refus(async () => {
-    // 设置接听方状态
-    callState.value = CALL_STATE.REFUSE;
-    // 关闭remote pc通道
-    remotePc.close();
-    setTimeout(() => {
-      callState.value = CALL_STATE.WAIT;
-    }, 1000);
+    // 清空状态
+    clearState(CALL_STATE.REFUSE);
   });
   // 接收offer创建answer转发
   sc.rtc_offer(async res => {
@@ -154,45 +179,23 @@ async function start(username: string) {
     let video: HTMLVideoElement = remoteVideoRef.value.$el;
     remotePc.ontrack = e => {
       video.srcObject = e.streams[0];
-      // video.addEventListener("loadedmetadata", () => {
-      // 来电话了
       // 如果是发起者需要对方同意，如果是接收者直接播放
       if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
       else {
         video.play();
         callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
       }
-      // });
     };
     // 添加ice
     const candidate = res.data;
     await remotePc.addIceCandidate(candidate);
   });
 }
-
-function onOffCall() {
-  // 设置接听方状态
-  callState.value = CALL_STATE.OFF;
-  // 关闭remote pc通道
-  remotePc.close();
-  setTimeout(() => {
-    callState.value = CALL_STATE.WAIT;
-    userInfo.userInfo.toUserName = ""; // 清空对方信息
-  }, 1000);
-  sc.emit(SOCKET_ON_RTC.USER_OFF, {});
-}
-async function initVideo(video: HTMLVideoElement) {
-  if (!video) return;
-  try {
-    // userMediaConfig ,getDisplayMedia共享屏幕
-    let stream = await navigator.mediaDevices.getUserMedia(userMediaConfig);
-    video.srcObject = stream;
-    localStream = stream;
-    video.play();
-  } catch (e) {
-    console.log("getDisplayMedia() error: ", e);
-  }
-}
+/**
+ * 发起协议offer
+ * @param toUser 拨打用户
+ * @param callType 当前用户协议状态
+ */
 async function sendOffer(toUser: string, callType: CALL_TYPE) {
   if (!sc.socket) {
     showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });

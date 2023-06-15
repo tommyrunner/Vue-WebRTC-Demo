@@ -4,6 +4,7 @@ import { useUserInfo } from "./pinia/userInfo";
 import { ResRtcType, ResType, RtcEmitParams, RtcFun } from "./type";
 import { showDiaLog } from "./utils";
 
+// socket 控制类
 export default class SocketControl {
   socket: Socket = io();
   username: string;
@@ -11,6 +12,8 @@ export default class SocketControl {
   constructor(username: string) {
     this.username = username;
     this.userInfo = useUserInfo();
+    // 连接socket
+    this.connect();
   }
   async connect() {
     return new Promise(res => {
@@ -18,7 +21,8 @@ export default class SocketControl {
         showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "连接失败,用户名也就存在!" });
         return;
       }
-      this.socket = io("ws://localhost:3003/", {
+      this.socket = io("https://localhost/", {
+        // this.socket = io("http://localhost:3003/", {
         path: "/rtc",
         query: { username: this.username, room: "001" }
       });

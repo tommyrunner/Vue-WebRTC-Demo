@@ -1,6 +1,11 @@
 import { CALL_STATE } from "@/enum";
 import { Ref, ref, watch } from "vue";
 
+/**
+ * 根据状态吐丝
+ * @param state 状态
+ * @returns 吐丝
+ */
 export function useToast(state: Ref<CALL_STATE>) {
   let toast = ref("...");
   watch(state, () => {

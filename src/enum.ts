@@ -1,3 +1,4 @@
+// 提示框类型
 export enum DIALOG_TYPE {
   INFO = "info",
   ERROR = "error",
@@ -36,10 +37,14 @@ export enum SOCKET_ON_SYS {
 export enum SOCKET_EMIT {
   SYS_USER_LIST = "user_list"
 }
+// rtc协议状态
 export enum CALL_TYPE {
+  // 发起者
   SENDER = "sender",
+  // 接收者
   RECIVER = "reciver"
 }
+// 通话状态
 export enum CALL_STATE {
   // 等待
   WAIT = 0,
