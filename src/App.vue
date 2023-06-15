@@ -11,21 +11,19 @@
       </div>
       <!-- 本地视频 -->
       <AppVideo
-        @click="callState === CALL_STATE.CONNECT && (videoDirection = !videoDirection)"
+        @click="
+          (callState === CALL_STATE.CONNECT && (videoDirection = !videoDirection)) ||
+            (!videoDirection && (videoDirection = !videoDirection))
+        "
         :class="[videoDirection ? 'local-video' : 'remote-video']"
         ref="localVideoRef"
-        style="opacity: 0.06"
       />
       <!-- remote视频 -->
-      <Transition name="remote">
-        <AppVideo
-          @click="videoDirection = !videoDirection"
-          :class="[!videoDirection ? 'local-video' : 'remote-video']"
-          ref="remoteVideoRef"
-          v-show="callState === CALL_STATE.CONNECT"
-          style="opacity: 0.06"
-        />
-      </Transition>
+      <AppVideo
+        @click="videoDirection = !videoDirection"
+        :class="[!videoDirection ? 'local-video' : 'remote-video', callState === CALL_STATE.CONNECT ? '' : 'hidden-remote']"
+        ref="remoteVideoRef"
+      />
     </div>
   </div>
   <Login @login="onLogin" ref="loginRef" />
@@ -186,7 +184,7 @@ function onOffCall() {
 async function initVideo(video: HTMLVideoElement) {
   if (!video) return;
   try {
-    // userMediaConfig
+    // userMediaConfig ,getDisplayMedia共享屏幕
     let stream = await navigator.mediaDevices.getUserMedia(userMediaConfig);
     video.srcObject = stream;
     localStream = stream;
@@ -250,6 +248,9 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
       box-shadow: 0px 0px 5px black;
       transition: 0.6s;
     }
+    .hidden-remote {
+      transform: scale(0);
+    }
     .close {
       position: absolute;
       z-index: 2;
@@ -288,22 +289,6 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
   100% {
     opacity: 1;
     transform: translateY(0px);
-  }
-}
-.remote-enter-active {
-  animation: remote-in 0.5s;
-}
-.remote-leave-active {
-  animation: remote-in 0.5s reverse;
-}
-@keyframes remote-in {
-  0% {
-    opacity: 0;
-    transform: scale(0);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 </style>

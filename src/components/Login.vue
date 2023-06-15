@@ -1,9 +1,11 @@
 <template>
-  <div :class="['login', oneShow ? 'show' : '', 'show-box', isError ? 'error' : '', isClose ? 'close' : '']">
-    <span class="title">登录</span>
-    <input placeholder="输入账号(1-4)" v-model="username" :class="isError ? 'input-error' : ''" />
-    <AppButton @click="login" class="login-btn">进入</AppButton>
-  </div>
+  <Transition name="login" appear>
+    <div v-if="isClose" :class="['login', 'show-box', isError ? 'error' : '']">
+      <span class="title">登录</span>
+      <input placeholder="输入账号(1-4)" v-model="username" :class="isError ? 'input-error' : ''" />
+      <AppButton @click="login" class="login-btn">进入</AppButton>
+    </div>
+  </Transition>
 </template>
 <script lang="ts" setup>
 import AppButton from "./AppButton.vue";
@@ -13,12 +15,7 @@ import { DIALOG_TYPE } from "@/enum";
 const $emit = defineEmits(["login"]);
 let username = ref("");
 let isError = ref(false);
-let isClose = ref(false);
-// 显示一次，为了不与error动画冲突
-let oneShow = ref(true);
-setTimeout(() => {
-  oneShow.value = false;
-}, 500);
+let isClose = ref(true);
 function login() {
   if (isError.value) return;
   if (username.value.length <= 0 || username.value.length > 4) {
@@ -32,10 +29,10 @@ function login() {
   }
 }
 function close() {
-  isClose.value = true;
+  isClose.value = false;
 }
 defineExpose({
-  close,
+  close
 });
 </script>
 <style lang="less" scoped>
@@ -64,14 +61,8 @@ defineExpose({
     font-size: 16px;
   }
 }
-.show {
-  animation: show ease 0.5s;
-}
 .error {
   animation: error-show 0.5s;
-}
-.close {
-  animation: close 0.5s forwards;
 }
 .input-error {
   border: 1px solid @color-error;
@@ -94,7 +85,13 @@ defineExpose({
     transform: scale(0.95, 1.05) translate(-50%, -50%);
   }
 }
-@keyframes show {
+.login-enter-active {
+  animation: login-in 0.5s;
+}
+.login-leave-active {
+  animation: login-in 0.5s reverse;
+}
+@keyframes login-in {
   0% {
     opacity: 0;
     top: 20%;
@@ -102,16 +99,6 @@ defineExpose({
   100% {
     opacity: 1;
     top: 40%;
-  }
-}
-@keyframes close {
-  0% {
-    opacity: 1;
-    top: 40%;
-  }
-  100% {
-    opacity: 0;
-    top: 80%;
   }
 }
 .login::before {
