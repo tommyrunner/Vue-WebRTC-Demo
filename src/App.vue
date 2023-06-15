@@ -11,9 +11,10 @@
       </div>
       <!-- 本地视频 -->
       <AppVideo
-        @click="videoDirection = !videoDirection"
+        @click="callState === CALL_STATE.CONNECT && (videoDirection = !videoDirection)"
         :class="[videoDirection ? 'local-video' : 'remote-video']"
         ref="localVideoRef"
+        style="opacity: 0.06"
       />
       <!-- remote视频 -->
       <Transition name="remote">
@@ -22,6 +23,7 @@
           :class="[!videoDirection ? 'local-video' : 'remote-video']"
           ref="remoteVideoRef"
           v-show="callState === CALL_STATE.CONNECT"
+          style="opacity: 0.06"
         />
       </Transition>
     </div>
@@ -232,16 +234,19 @@ async function sendOffer(toUser: string, callType: CALL_TYPE) {
     flex: 1;
     position: relative;
     .local-video {
+      position: absolute;
       transition: 0.6s;
+      right: 0px;
+      top: 0px;
     }
     .remote-video {
       cursor: pointer;
       position: absolute;
       z-index: 2;
-      right: 3%;
-      top: 3%;
-      width: 30% !important;
-      height: 30% !important;
+      right: 12px;
+      top: 12px;
+      width: 300px !important;
+      height: 400px !important;
       box-shadow: 0px 0px 5px black;
       transition: 0.6s;
     }

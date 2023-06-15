@@ -1,5 +1,13 @@
 <template>
-  <div class="user-list show-box">
+  <SvgIcon
+    name="menu"
+    size="22"
+    :class="['mobile-menu', isOpen ? 'open-menu' : '']"
+    color="#67c23a"
+    v-if="isMobile"
+    @click="isOpen = !isOpen"
+  />
+  <div :class="['user-list', 'show-box', isMobile ? 'mobile' : '', isOpen ? 'open-user' : '']">
     <spen class="title">用户列表</spen>
     <div class="list">
       <div class="item show-box" v-for="item in userInfo.userList" :key="item.userId">
@@ -23,13 +31,42 @@ import SvgIcon from "./SvgIcon.vue";
 import AppButton from "./AppButton.vue";
 import { useUserInfo } from "@/pinia/userInfo";
 import { CALL_STATE } from "@/enum";
+import { computed, ref } from "vue";
 let userInfo = useUserInfo();
 interface PropsType {
   callState: CALL_STATE;
 }
+let isOpen = ref(false);
+let isMobile = computed(() => {
+  let w = window.screen.width;
+  let h = window.screen.height;
+  // 粗略判断是否是移动端
+  return w <= h;
+});
 const props = withDefaults(defineProps<PropsType>(), {});
 </script>
 <style lang="less" scoped>
+.open-user {
+  left: 0px !important;
+}
+.open-menu {
+  transform: rotate(90deg);
+}
+.mobile-menu {
+  position: fixed;
+  left: 24px;
+  top: 24px;
+  z-index: 2001;
+  transition: 0.22s;
+}
+.mobile {
+  position: fixed;
+  left: -320px;
+  height: 100%;
+  background-color: white;
+  transition: 0.5s;
+  z-index: 2000;
+}
 .user-list {
   padding: 12px;
   width: 300px;
@@ -52,6 +89,7 @@ const props = withDefaults(defineProps<PropsType>(), {});
       height: 32px;
       padding: 12px;
       margin-bottom: 12px;
+      box-sizing: border-box;
       .now {
         font-size: 12px;
         color: @color-success;
