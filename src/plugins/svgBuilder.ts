@@ -16,7 +16,7 @@ function findSvgFile(dir: string): any {
       const svg = readFileSync(dir + dirent.name)
         .toString()
         .replace(clearReturn, "")
-        .replace(svgTitle, ($1, $2) => {
+        .replace(svgTitle, (_, $2) => {
           let width = 0;
           let height = 0;
           let content = $2.replace(

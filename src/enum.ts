@@ -26,7 +26,7 @@ export enum SOCKET_ON_RTC {
 // 系统消息on
 export enum SOCKET_ON_SYS {
   // 连接socket
-  CONNECTION = "connection",
+  CONNECTION = "connect",
   // 断开socket
   DISCONNECT = "disconnect",
   // 用户列表

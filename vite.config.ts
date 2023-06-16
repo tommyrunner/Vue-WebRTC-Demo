@@ -9,19 +9,28 @@ function resolve(url: string): string {
 
 export default defineConfig({
   server: {
-    host: "0.0.0.0",
+    host: "0.0.0.0"
   },
   plugins: [vue(), svgBuilder("./src/assets/imgs/")],
+  build: {
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
+  },
   resolve: {
     alias: {
-      "@": resolve("./src"),
-    },
+      "@": resolve("./src")
+    }
   },
   css: {
     preprocessorOptions: {
       less: {
-        additionalData: "@import '@/assets/theme.less';",
-      },
-    },
-  },
+        additionalData: "@import '@/assets/theme.less';"
+      }
+    }
+  }
 });

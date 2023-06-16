@@ -3,6 +3,8 @@ import { CALL_TYPE, DIALOG_TYPE, SOCKET_ON_RTC, SOCKET_ON_SYS } from "./enum";
 import { useUserInfo } from "./pinia/userInfo";
 import { ResRtcType, ResType, RtcEmitParams, RtcFun } from "./type";
 import { showDiaLog } from "./utils";
+import { baseUrl } from "@/config";
+console.log(baseUrl);
 
 // socket 控制类
 export default class SocketControl {
@@ -21,12 +23,11 @@ export default class SocketControl {
         showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "连接失败,用户名也就存在!" });
         return;
       }
-      this.socket = io("https://localhost/", {
-        // this.socket = io("http://localhost:3003/", {
+      this.socket = io(baseUrl, {
         path: "/rtc",
         query: { username: this.username, room: "001" }
       });
-      this.socket.on("connect", () => {
+      this.socket.on(SOCKET_ON_SYS.CONNECTION, () => {
         showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
         // 储存当前用户
         this.userInfo.userInfo.username = this.username;

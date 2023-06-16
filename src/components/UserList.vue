@@ -8,7 +8,7 @@
     @click="isOpen = !isOpen"
   />
   <div :class="['user-list', 'show-box', isMobile ? 'mobile' : '', isOpen ? 'open-user' : '']">
-    <spen class="title">用户列表</spen>
+    <span class="title">用户列表</span>
     <div class="list">
       <div class="item show-box" v-for="item in userInfo.userList" :key="item.userId">
         <div class="left">
@@ -33,6 +33,7 @@ import { useUserInfo } from "@/pinia/userInfo";
 import { CALL_STATE } from "@/enum";
 import { computed, ref } from "vue";
 let userInfo = useUserInfo();
+const $emit = defineEmits(["callUser"]);
 interface PropsType {
   callState: CALL_STATE;
 }
