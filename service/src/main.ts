@@ -8,6 +8,17 @@ import Clients from "./clients";
 let io = initApp();
 // 内存存储连接用户信息
 let clients = new Clients();
+// 连接之前判断是否名字重复
+io.use((socket, next) => {
+  let query = socket.handshake.query;
+  if (query.username) {
+    if (clients.data.some(c => c.username === query.username)) {
+      next(new Error("用户名已经被使用"));
+    } else next();
+  } else {
+    next(new Error("参数错误"));
+  }
+});
 // 监听连接
 io.on(SOCKET_ON_SYS.CONNECTION, function (socket) {
   // 获取连接参数(用户名,房间号(备用))

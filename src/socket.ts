@@ -27,17 +27,12 @@ export default class SocketControl {
         path: "/rtc",
         query: { username: this.username, room: "001" }
       });
-      this.socket.on(SOCKET_ON_SYS.CONNECTION, () => {
-        showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
-        // 储存当前用户
-        this.userInfo.userInfo.username = this.username;
-        res({});
-        if (!this.socket) {
-          showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });
-        } else {
-          this.sys(this.socket);
-        }
-      });
+      res({});
+      if (!this.socket) {
+        showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "请先连接!" });
+      } else {
+        this.sys(this.socket);
+      }
     });
   }
   getSocket() {
@@ -48,8 +43,13 @@ export default class SocketControl {
     socket.on(SOCKET_ON_SYS.USER_LIST, data => {
       this.userInfo.userList = data;
     });
-    socket.on(SOCKET_ON_SYS.SYS_ERROR, (data: ResType) => {
-      showDiaLog({ type: DIALOG_TYPE.ERROR, msg: String(data.msg) });
+    this.socket.on(SOCKET_ON_SYS.CONNECTION, () => {
+      showDiaLog({ type: DIALOG_TYPE.SUCCESS, msg: "连接成功" });
+      // 储存当前用户
+      this.userInfo.userInfo.username = this.username;
+    });
+    this.socket.on(SOCKET_ON_SYS.CONNECTION_ERROR, () => {
+      showDiaLog({ type: DIALOG_TYPE.ERROR, msg: "连接失败:可能用户名已经被使用!" });
     });
   }
   emit<T>(key: SOCKET_ON_RTC, data: T, callType?: CALL_TYPE) {

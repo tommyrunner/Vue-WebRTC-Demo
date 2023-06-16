@@ -53,13 +53,42 @@ import Notice from "./components/Notice.vue";
 import Settings from "./components/Settings.vue";
 const localVideoRef = ref<InstanceType<typeof AppVideo>>();
 const remoteVideoRef = ref<InstanceType<typeof AppVideo>>();
-const loginRef = ref();
+const loginRef = ref<InstanceType<typeof Login>>();
 const noticeRef = ref<InstanceType<typeof Notice>>();
 const userInfo = useUserInfo();
+const rtcConfig: RTCConfiguration = {
+  iceServers: [
+    {
+      urls: ["stun:stun.l.google.com:19302"]
+    },
+    {
+      urls: ["turn:120.77.253.101:3478"],
+      username: "inter_user",
+      credential: "power_turn"
+    }
+  ]
+};
+let localStream: MediaStream;
+let localPc: RTCPeerConnection;
+let remotePc: RTCPeerConnection;
 let sc: SocketControl;
 let callState = ref<CALL_STATE>(CALL_STATE.WAIT);
 let videoDirection = ref(true);
 let [toast] = useToast(callState);
+// 监听是否连接成功
+watch(
+  () => userInfo.userInfo.username,
+  () => {
+    // 初始化本地video
+    if (localVideoRef.value) {
+      initVideo(localVideoRef.value.$el, {
+        video: SETTINGS_VIDEO.USER
+      });
+      if (loginRef.value) loginRef.value.show(false);
+    }
+  }
+);
+// 监听动态设置
 watch(
   () => userInfo.settings,
   () => {
@@ -81,6 +110,7 @@ watch(
   },
   { deep: true }
 );
+// 监听切换视频类型
 watch(
   () => userInfo.settings.video,
   () => {
@@ -93,21 +123,6 @@ watch(
     }
   }
 );
-const rtcConfig: RTCConfiguration = {
-  iceServers: [
-    {
-      urls: ["stun:stun.l.google.com:19302"]
-    },
-    {
-      urls: ["turn:120.77.253.101:3478"],
-      username: "inter_user",
-      credential: "power_turn"
-    }
-  ]
-};
-let localStream: MediaStream;
-let localPc: RTCPeerConnection;
-let remotePc: RTCPeerConnection;
 function onLogin(username: string) {
   // 刚进入刷新remote，准备连接对方的pc
   remotePc = new RTCPeerConnection(rtcConfig);
@@ -161,7 +176,7 @@ async function initVideo(video: HTMLVideoElement, params: InitVideoParams) {
     localStream = stream;
     video.play();
   } catch (e) {
-    console.log("getDisplayMedia() error: ", e);
+    console.log(`${params.video} error: `, e);
   }
 }
 // 清空状态
@@ -178,12 +193,6 @@ function clearState(state: CALL_STATE) {
 // 开始接听rtc协议连接
 async function start(username: string) {
   sc = new SocketControl(username);
-  loginRef.value.close();
-  // 初始化本地video
-  if (localVideoRef.value)
-    initVideo(localVideoRef.value.$el, {
-      video: SETTINGS_VIDEO.USER
-    });
   // 监听《接收者》是否挂断
   sc.user_off(async () => {
     // 清空状态

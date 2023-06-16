@@ -25,14 +25,14 @@ export enum SOCKET_ON_RTC {
 }
 // 系统消息on
 export enum SOCKET_ON_SYS {
-  // 连接socket
+  // 连接成功
   CONNECTION = "connect",
+  // 连接失败
+  CONNECTION_ERROR = "connect_error",
   // 断开socket
   DISCONNECT = "disconnect",
   // 用户列表
-  USER_LIST = "user_list",
-  // 错误显示
-  SYS_ERROR = "sys_error"
+  USER_LIST = "user_list"
 }
 export enum SOCKET_EMIT {
   SYS_USER_LIST = "user_list"

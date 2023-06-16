@@ -10,10 +10,12 @@ export default class Clients {
   add(user: UserType) {
     if (!user || !user.username) return;
     if (this.data.some(v => v.username === user.username)) {
-      this.remove(user.username);
+      return false;
     }
     this.data.push(user);
+    console.log(this.data, user);
     $log(`---${user.username}---(连接)`);
+    return true;
   }
   remove(username: string) {
     this.data = this.data.filter(c => username !== c.username);

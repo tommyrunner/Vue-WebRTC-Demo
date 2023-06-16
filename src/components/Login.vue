@@ -28,11 +28,11 @@ function login() {
     $emit("login", username.value);
   }
 }
-function close() {
-  isClose.value = false;
+function show(is: boolean) {
+  isClose.value = is;
 }
 defineExpose({
-  close
+  show
 });
 </script>
 <style lang="less" scoped>
