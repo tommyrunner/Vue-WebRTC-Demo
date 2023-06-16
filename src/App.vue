@@ -29,6 +29,8 @@
   <Notice ref="noticeRef" @call="onCall" />
   <!-- 登录窗口 -->
   <Login @login="onLogin" ref="loginRef" />
+  <!-- 设置窗口 -->
+  <Settings />
 </template>
 <script setup lang="ts">
 /**
@@ -36,17 +38,19 @@
  * WebRTC使用的信令服务器主要是用于建立和维护端到端通信的会话控制信息的传输。一旦会话建立成功，信令服务器就不再需要参与实时通信过程中的音视频数据传输。因此，在信令服务器关闭后，已经建立的通话仍然可以继续进行，但无法再开始新的通话或重新连接已关闭的通话。
  * 在建立WebRTC连接时，浏览器会自动处理STUN和TURN协议，以确保可靠的通信。因此，即使信令服务器关闭，已经建立的WebRTC连接仍然可以继续运行。这种设计使得WebRTC成为一种高效可靠的实时通讯技术。
  */
-import { ref } from "vue";
+import { ref, watch } from "vue";
+import { InitVideoParams } from "./type";
 import UserList from "./components/UserList.vue";
 import SvgIcon from "./components/SvgIcon.vue";
 import AppVideo from "./components/AppVideo.vue";
 import Login from "./components/Login.vue";
 import SocketControl from "./socket";
-import { DIALOG_TYPE, SOCKET_ON_RTC, CALL_TYPE, CALL_STATE } from "./enum";
+import { DIALOG_TYPE, SOCKET_ON_RTC, CALL_TYPE, CALL_STATE, SETTINGS_VIDEO } from "./enum";
 import { showDiaLog } from "./utils";
 import { useUserInfo } from "./pinia/userInfo";
 import { useToast } from "@/hooks/useToast";
 import Notice from "./components/Notice.vue";
+import Settings from "./components/Settings.vue";
 const localVideoRef = ref<InstanceType<typeof AppVideo>>();
 const remoteVideoRef = ref<InstanceType<typeof AppVideo>>();
 const loginRef = ref();
@@ -56,12 +60,39 @@ let sc: SocketControl;
 let callState = ref<CALL_STATE>(CALL_STATE.WAIT);
 let videoDirection = ref(true);
 let [toast] = useToast(callState);
-const userMediaConfig = {
-  // 音频
-  // audio: true,
-  // 视频
-  video: true
-};
+watch(
+  () => userInfo.settings,
+  () => {
+    let settings = userInfo.settings;
+    if (localVideoRef.value) {
+      const localVideo: HTMLVideoElement = localVideoRef.value.$el;
+      // 关闭本地声音
+      localVideo.muted = !settings.localAudio;
+      // 关闭本地视频
+      localVideo.style.opacity = settings.localVideo ? "1" : "0";
+    }
+    // 关闭对方声音
+    if (remoteVideoRef.value) {
+      const remoteVideo: HTMLVideoElement = remoteVideoRef.value.$el;
+      remoteVideo.muted = !settings.remoteAudio;
+      // 关闭本地视频
+      remoteVideo.style.opacity = settings.remoteVideo ? "1" : "0";
+    }
+  },
+  { deep: true }
+);
+watch(
+  () => userInfo.settings.video,
+  () => {
+    let settings = userInfo.settings;
+    if (localVideoRef.value) {
+      const localVideo: HTMLVideoElement = localVideoRef.value.$el;
+      // 切换之前挂断电话
+      onOffCall();
+      initVideo(localVideo, { video: settings.video });
+    }
+  }
+);
 const rtcConfig: RTCConfiguration = {
   iceServers: [
     {
@@ -113,12 +144,19 @@ function onOffCall() {
   sc.emit(SOCKET_ON_RTC.USER_OFF, {});
 }
 // 初始化本地视频
-async function initVideo(video: HTMLVideoElement) {
+async function initVideo(video: HTMLVideoElement, params: InitVideoParams) {
   if (!video) return;
   try {
+    if (!params.config) {
+      params.config = {
+        video: true,
+        audio: true
+      };
+    }
     // userMediaConfig ,getDisplayMedia共享屏幕
-    let stream = await navigator.mediaDevices.getUserMedia(userMediaConfig);
-    // let stream = await navigator.mediaDevices.getDisplayMedia();
+    let stream = await navigator.mediaDevices[params.video === SETTINGS_VIDEO.DISPLAY ? "getDisplayMedia" : "getUserMedia"](
+      params.config
+    );
     video.srcObject = stream;
     localStream = stream;
     video.play();
@@ -142,7 +180,10 @@ async function start(username: string) {
   sc = new SocketControl(username);
   loginRef.value.close();
   // 初始化本地video
-  if (localVideoRef.value) initVideo(localVideoRef.value.$el);
+  if (localVideoRef.value)
+    initVideo(localVideoRef.value.$el, {
+      video: SETTINGS_VIDEO.USER
+    });
   // 监听《接收者》是否挂断
   sc.user_off(async () => {
     // 清空状态
@@ -158,7 +199,6 @@ async function start(username: string) {
     // 创建 answer
     const remoteDesc = res.data;
     remotePc = new RTCPeerConnection(rtcConfig);
-    console.log(remotePc);
     await remotePc.setRemoteDescription(remoteDesc);
     let remoteAnswer = await remotePc.createAnswer();
     await remotePc.setLocalDescription(remoteAnswer);

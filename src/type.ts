@@ -1,4 +1,4 @@
-import { CALL_TYPE, DATA_CODE, DIALOG_TYPE } from "./enum";
+import { CALL_TYPE, DATA_CODE, DIALOG_TYPE, SETTINGS_VIDEO } from "./enum";
 // 提示框参数
 export interface DialogParamsType {
   msg: string; // 描述
@@ -31,3 +31,14 @@ export interface RtcEmitParams<T> {
 }
 // rtc回调函数
 export type RtcFun<T = undefined> = (params: RtcFunParams<T>) => void;
+
+// 初始化适配参数
+export interface InitVideoParams {
+  video: SETTINGS_VIDEO;
+  config?: {
+    // 音频
+    audio: boolean;
+    // 视频
+    video: boolean;
+  };
+}

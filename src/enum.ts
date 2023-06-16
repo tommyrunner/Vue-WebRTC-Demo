@@ -57,3 +57,10 @@ export enum CALL_STATE {
   // 挂断
   OFF = -2
 }
+// 视频显示类型
+export enum SETTINGS_VIDEO {
+  // 共享屏幕
+  DISPLAY = "display",
+  // 视频通话
+  USER = "user"
+}

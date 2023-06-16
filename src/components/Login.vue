@@ -1,5 +1,5 @@
 <template>
-  <Transition name="login" appear>
+  <Transition name="T_top_dow" appear>
     <div v-if="isClose" :class="['login', 'show-box', isError ? 'error' : '']">
       <span class="title">登录</span>
       <input placeholder="输入账号(1-4)" v-model="username" :class="isError ? 'input-error' : ''" />
@@ -83,22 +83,6 @@ defineExpose({
   }
   75% {
     transform: scale(0.95, 1.05) translate(-50%, -50%);
-  }
-}
-.login-enter-active {
-  animation: login-in 0.5s;
-}
-.login-leave-active {
-  animation: login-in 0.5s reverse;
-}
-@keyframes login-in {
-  0% {
-    opacity: 0;
-    top: 20%;
-  }
-  100% {
-    opacity: 1;
-    top: 40%;
   }
 }
 .login::before {

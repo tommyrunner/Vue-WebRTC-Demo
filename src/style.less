@@ -42,3 +42,20 @@ input {
     outline: 1px solid @color-theme;
   }
 }
+
+.T_top_dow-enter-active {
+  animation: t_top_dow-in 0.5s;
+}
+.T_top_dow-leave-active {
+  animation: t_top_dow-in 0.5s reverse;
+}
+@keyframes t_top_dow-in {
+  0% {
+    opacity: 0;
+    top: 20%;
+  }
+  100% {
+    opacity: 1;
+    top: 40%;
+  }
+}

@@ -5,7 +5,7 @@
     :class="['mobile-menu', isOpen ? 'open-menu' : '']"
     color="#67c23a"
     v-if="isMobile"
-    @click="isOpen = !isOpen"
+    @click="userInfo.userInfo.username && (isOpen = !isOpen)"
   />
   <div :class="['user-list', 'show-box', isMobile ? 'mobile' : '', isOpen ? 'open-user' : '']">
     <span class="title">用户列表</span>

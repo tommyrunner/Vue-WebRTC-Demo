@@ -1,5 +1,5 @@
 <template>
-  <video muted class="app-video" ref="VideoRef" :style="{ width: props.width, height: props.height }">
+  <video class="app-video" autoplay ref="VideoRef" :style="{ width: props.width, height: props.height }">
     <source type="video/mp4" />
   </video>
 </template>
