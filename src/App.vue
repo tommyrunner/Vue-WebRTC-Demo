@@ -35,6 +35,7 @@
 <script setup lang="ts">
 /**
  * TODO: 必须是https
+ * 权限冲突：某个浏览器可能已经占用了您的摄像头或麦克风设备
  * WebRTC使用的信令服务器主要是用于建立和维护端到端通信的会话控制信息的传输。一旦会话建立成功，信令服务器就不再需要参与实时通信过程中的音视频数据传输。因此，在信令服务器关闭后，已经建立的通话仍然可以继续进行，但无法再开始新的通话或重新连接已关闭的通话。
  * 在建立WebRTC连接时，浏览器会自动处理STUN和TURN协议，以确保可靠的通信。因此，即使信令服务器关闭，已经建立的WebRTC连接仍然可以继续运行。这种设计使得WebRTC成为一种高效可靠的实时通讯技术。
  */
@@ -68,13 +69,13 @@ const rtcConfig: RTCConfiguration = {
     }
   ]
 };
-let localStream: MediaStream;
-let localPc: RTCPeerConnection;
-let remotePc: RTCPeerConnection;
-let sc: SocketControl;
-let callState = ref<CALL_STATE>(CALL_STATE.WAIT);
-let videoDirection = ref(true);
-let [toast] = useToast(callState);
+let localStream: MediaStream; // 本地stream
+let localPc: RTCPeerConnection; // 本地pc连接
+let remotePc: RTCPeerConnection; // 对方pc连接
+let sc: SocketControl; // socket控制器
+let callState = ref<CALL_STATE>(CALL_STATE.WAIT); // 通话状态
+let videoDirection = ref(true); // 对方/本地视频位置
+let [toast] = useToast(callState); // 通话提示hook
 // 监听是否连接成功
 watch(
   () => userInfo.userInfo.username,
@@ -138,6 +139,12 @@ function onCallUser(toUser: string) {
 async function onCall(is: boolean) {
   if (!is) {
     // 拒接通话
+    sc.emit(SOCKET_ON_RTC.USER_REFUST, {});
+    return;
+  }
+  // 如果当前状态处于通话，先断开通话
+  if (callState.value === CALL_STATE.CONNECT) {
+    showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "当前处于通话中,请先挂断后重试!" });
     sc.emit(SOCKET_ON_RTC.USER_REFUST, {});
     return;
   }
