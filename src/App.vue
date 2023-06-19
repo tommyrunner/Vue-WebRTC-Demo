@@ -5,7 +5,13 @@
       <div class="close">
         <span class="toast">{{ toast }}</span>
         <Transition name="close">
-          <SvgIcon name="close" size="48" color="#fe6c6f" @click="onOffCall" v-if="callState === CALL_STATE.CONNECT" />
+          <SvgIcon
+            name="close"
+            size="48"
+            color="#fe6c6f"
+            @click="onOffCall"
+            v-if="callState === CALL_STATE.CONNECT || callState === CALL_STATE.SEND"
+          />
         </Transition>
       </div>
       <!-- 本地视频 -->
@@ -35,12 +41,26 @@
 <script setup lang="ts">
 /**
  * TODO: 必须是https
+ * win10与win11兼容,手机浏览器兼容(可能是规格的域名，也有可能是浏览器不兼容,safari暂时兼容)
+ * 同电脑不同浏览器，设备占用问题
+ * ZEGO
+ * 手机浏览器：
+Google Chrome for Android：版本号 52 及以上
+Firefox for Android：版本号 53 及以上
+Opera for Android：版本号 39 及以上
+UC Browser for Android：版本号 10.8 及以上
+Maxthon for Android：版本号 4.2.8.2000 及以上
+电脑浏览器：
+Google Chrome：版本号 52 及以上
+Firefox：版本号 53 及以上
+Opera：版本号 39 及以上
+Microsoft Edge：版本号 79 及以上
+Safari：版本号 10.1 及以上
  * 权限冲突：某个浏览器可能已经占用了您的摄像头或麦克风设备
  * WebRTC使用的信令服务器主要是用于建立和维护端到端通信的会话控制信息的传输。一旦会话建立成功，信令服务器就不再需要参与实时通信过程中的音视频数据传输。因此，在信令服务器关闭后，已经建立的通话仍然可以继续进行，但无法再开始新的通话或重新连接已关闭的通话。
  * 在建立WebRTC连接时，浏览器会自动处理STUN和TURN协议，以确保可靠的通信。因此，即使信令服务器关闭，已经建立的WebRTC连接仍然可以继续运行。这种设计使得WebRTC成为一种高效可靠的实时通讯技术。
  */
 import { ref, watch } from "vue";
-import { InitVideoParams } from "./type";
 import UserList from "./components/UserList.vue";
 import SvgIcon from "./components/SvgIcon.vue";
 import AppVideo from "./components/AppVideo.vue";
@@ -76,15 +96,12 @@ let sc: SocketControl; // socket控制器
 let callState = ref<CALL_STATE>(CALL_STATE.WAIT); // 通话状态
 let videoDirection = ref(true); // 对方/本地视频位置
 let [toast] = useToast(callState); // 通话提示hook
-// 监听是否连接成功
 watch(
   () => userInfo.userInfo.username,
   () => {
     // 初始化本地video
     if (localVideoRef.value) {
-      initVideo(localVideoRef.value.$el, {
-        video: SETTINGS_VIDEO.USER
-      });
+      initVideo(localVideoRef.value.$el);
       if (loginRef.value) loginRef.value.show(false);
     }
   }
@@ -115,12 +132,11 @@ watch(
 watch(
   () => userInfo.settings.video,
   () => {
-    let settings = userInfo.settings;
     if (localVideoRef.value) {
       const localVideo: HTMLVideoElement = localVideoRef.value.$el;
-      // 切换之前挂断电话
-      onOffCall();
-      initVideo(localVideo, { video: settings.video });
+      // 如果处于通话挂断电话，否则直接切换
+      if (callState.value === CALL_STATE.CONNECT) onOffCall();
+      initVideo(localVideo);
     }
   }
 );
@@ -156,7 +172,7 @@ async function onCall(is: boolean) {
     if (userInfo.userInfo.toUserName && callState.value !== CALL_STATE.SEND) {
       callState.value = CALL_STATE.CONNECT; // 同意通话，并设置自己状态为通话中
       sendOffer(userInfo.userInfo.toUserName, CALL_TYPE.RECIVER);
-    }
+    } else showDiaLog({ type: DIALOG_TYPE.WARNING, msg: "当前处于拨打中..." });
   }
 }
 // 点击挂断
@@ -166,24 +182,23 @@ function onOffCall() {
   sc.emit(SOCKET_ON_RTC.USER_OFF, {});
 }
 // 初始化本地视频
-async function initVideo(video: HTMLVideoElement, params: InitVideoParams) {
+async function initVideo(video: HTMLVideoElement) {
   if (!video) return;
+  let settings = userInfo.settings;
   try {
-    if (!params.config) {
-      params.config = {
-        video: true,
-        audio: true
-      };
-    }
+    let config = {
+      video: settings.localVideo || false,
+      audio: settings.localAudio || false
+    };
     // userMediaConfig ,getDisplayMedia共享屏幕
-    let stream = await navigator.mediaDevices[params.video === SETTINGS_VIDEO.DISPLAY ? "getDisplayMedia" : "getUserMedia"](
-      params.config
+    let stream = await navigator.mediaDevices[settings.video === SETTINGS_VIDEO.DISPLAY ? "getDisplayMedia" : "getUserMedia"](
+      config
     );
     video.srcObject = stream;
     localStream = stream;
     video.play();
   } catch (e) {
-    console.log(`${params.video} error: `, e);
+    console.log(`${settings.video} error: `, e);
   }
 }
 // 清空状态
@@ -192,6 +207,8 @@ function clearState(state: CALL_STATE) {
   callState.value = state;
   // 关闭remote pc通道
   remotePc.close();
+  // 清除video监听完成事件
+  if (remoteVideoRef.value) remoteVideoRef.value.$el.oncanplay = null;
   setTimeout(() => {
     userInfo.userInfo.toUserName = ""; // 清空对方信息
     callState.value = CALL_STATE.WAIT; // 归回状态
@@ -238,8 +255,10 @@ async function start(username: string) {
       // 如果是发起者需要对方同意，如果是接收者直接播放
       if (noticeRef.value && res.callType === CALL_TYPE.SENDER) noticeRef.value.showNotice(res.toUsername);
       else {
-        video.play();
-        callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
+        video.oncanplay = () => {
+          video.play();
+          callState.value = CALL_STATE.CONNECT; // 接收者设置状态通话中
+        };
       }
     };
     // 添加ice
