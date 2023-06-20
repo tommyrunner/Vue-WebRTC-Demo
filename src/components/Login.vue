@@ -45,8 +45,9 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 22px;
-  width: 30%;
+  padding: 22px 4%;
+  box-sizing: border-box;
+  width: 320px;
   background-color: white;
   .title {
     margin-bottom: 12px;
@@ -56,6 +57,7 @@ defineExpose({
   }
   input {
     margin-bottom: 32px;
+    width: 100%;
   }
   .login-btn {
     font-size: 16px;

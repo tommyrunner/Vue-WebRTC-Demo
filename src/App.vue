@@ -39,27 +39,6 @@
   <Settings />
 </template>
 <script setup lang="ts">
-/**
- * TODO: 必须是https
- * win10与win11兼容,手机浏览器兼容(可能是规格的域名，也有可能是浏览器不兼容,safari暂时兼容)
- * 同电脑不同浏览器，设备占用问题
- * ZEGO
- * 手机浏览器：
-Google Chrome for Android：版本号 52 及以上
-Firefox for Android：版本号 53 及以上
-Opera for Android：版本号 39 及以上
-UC Browser for Android：版本号 10.8 及以上
-Maxthon for Android：版本号 4.2.8.2000 及以上
-电脑浏览器：
-Google Chrome：版本号 52 及以上
-Firefox：版本号 53 及以上
-Opera：版本号 39 及以上
-Microsoft Edge：版本号 79 及以上
-Safari：版本号 10.1 及以上
- * 权限冲突：某个浏览器可能已经占用了您的摄像头或麦克风设备
- * WebRTC使用的信令服务器主要是用于建立和维护端到端通信的会话控制信息的传输。一旦会话建立成功，信令服务器就不再需要参与实时通信过程中的音视频数据传输。因此，在信令服务器关闭后，已经建立的通话仍然可以继续进行，但无法再开始新的通话或重新连接已关闭的通话。
- * 在建立WebRTC连接时，浏览器会自动处理STUN和TURN协议，以确保可靠的通信。因此，即使信令服务器关闭，已经建立的WebRTC连接仍然可以继续运行。这种设计使得WebRTC成为一种高效可靠的实时通讯技术。
- */
 import { ref, watch } from "vue";
 import UserList from "./components/UserList.vue";
 import SvgIcon from "./components/SvgIcon.vue";

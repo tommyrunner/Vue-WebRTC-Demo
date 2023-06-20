@@ -1,7 +1,7 @@
 import { Socket, io } from "socket.io-client";
 import { CALL_TYPE, DIALOG_TYPE, SOCKET_ON_RTC, SOCKET_ON_SYS } from "./enum";
 import { useUserInfo } from "./pinia/userInfo";
-import { ResRtcType, ResType, RtcEmitParams, RtcFun } from "./type";
+import { ResRtcType, RtcEmitParams, RtcFun } from "./type";
 import { showDiaLog } from "./utils";
 import { baseUrl } from "@/config";
 console.log(baseUrl);
