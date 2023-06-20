@@ -53,7 +53,7 @@ npm run serve
 
 ## 效果
 
-![1](https://github.com/tommyrunner/Vue-WebRTC-Demo/blob/master/docs-imgs/1.gif)
+![1](D:\vueProject\vue3.0\Vue-WebRTC-Demo\docs-imgs\1.gif)
 
 > 因为需要信令服务器支持，这里就不开放线上预览链接了，可以直接 `clone` 下来尝试哦！
 
