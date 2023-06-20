@@ -127,7 +127,58 @@ TypeError: Cannot read properties of undefined (reading 'getUserMedia')
 
 > 该方式同样是需要`SSL`证书的。
 
-[传送]()
++ 本地nginx配置
+
+```conf
+# ...
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+
+   server {
+      listen       443 ssl;
+      server_name  localhost;
+	  # 配置自己的SSL证书
+      ssl_certificate C://Users//w//Desktop//xxx//xxx.crt;  
+      ssl_certificate_key C://Users//w//Desktop//xxxx//xxx.key;  
+	
+
+       ssl_session_cache    shared:SSL:1m;
+       ssl_session_timeout  5m;
+
+       ssl_ciphers  HIGH:!aNULL:!MD5;
+       ssl_prefer_server_ciphers  on;
+       # 映射前端
+       location / {
+         proxy_pass http://localhost:5173;
+         
+        }
+        # 映射信令服务器
+       location /rtc {
+           proxy_pass  http://127.0.0.1:3003;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
+        }
+    }
+
+}
+
+```
+
++ 信令服务器链接修改后，我们前端请求头也得修改，路径在`src->config->index.ts`中
+
+```ts
+- export const baseUrl = process.env.NODE_ENV === "development" ? "http://localhost:3003/" : "https://xxxx.com/";
++ export const baseUrl = process.env.NODE_ENV === "development" ? "https://ip/" : "https://xxxx.com/";
+```
+
+> 如果你需要部署在线上服务器，pro环境下的域名需要替换。
+
++ 配置完成后，启动`nginx`，并浏览器访问 https://ip 即可（可能浏览器会警告提示，点击继续访问）
++ 此时 `getUserMedia` 就可以正常使用，并且可以见链接发至手机，以及其他同一局域网设备，都是可以访问的。
 
 > 当然这种方式是不合格的，但开发阶段可以暂时这样解决问题，后续可以直接部署到线上服务器然后通过`nginx`映射`https`就可以了。
 >
