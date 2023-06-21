@@ -4,10 +4,11 @@
     size="32"
     :class="['setting-menu', isShow ? 'open-setting' : '']"
     color="#e5bc64"
-    @click="userInfo.userInfo.username && (isShow = !isShow)"
+    @click="isShow = !isShow"
   />
+  <div class="settings-mask" @click="isShow = false" v-if="isShow"></div>
   <Transition name="T_top_dow">
-    <div class="setting show-box" v-if="isShow">
+    <div class="setting show-box" @click.stop="void 0" v-if="isShow">
       <span class="title">通话设置</span>
       <div class="item">
         <span class="name">对方声音</span>
@@ -59,6 +60,14 @@ input {
 .open-setting {
   transform: rotate(90deg);
 }
+.settings-mask {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0px;
+  left: 0px;
+  z-index: 2001;
+}
 .setting {
   position: fixed;
   top: 40%;
@@ -69,6 +78,7 @@ input {
   padding: 12px;
   display: flex;
   flex-direction: column;
+  z-index: 2002;
   .title {
     align-self: center;
     font-size: 16px;

@@ -7,6 +7,7 @@
     v-if="isMobile"
     @click="userInfo.userInfo.username && (isOpen = !isOpen)"
   />
+  <div class="userlist-mask" @click="isOpen = false" v-if="isOpen"></div>
   <div :class="['user-list', 'show-box', isMobile ? 'mobile' : '', isOpen ? 'open-user' : '']">
     <span class="title">用户列表</span>
     <div class="list">
@@ -57,8 +58,16 @@ const props = withDefaults(defineProps<PropsType>(), {});
   position: fixed;
   left: 24px;
   top: 24px;
-  z-index: 2001;
+  z-index: 2003;
   transition: 0.22s;
+}
+.userlist-mask {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0px;
+  left: 0px;
+  z-index: 2001;
 }
 .mobile {
   position: fixed;
@@ -66,7 +75,7 @@ const props = withDefaults(defineProps<PropsType>(), {});
   height: 100%;
   background-color: white;
   transition: 0.5s;
-  z-index: 2000;
+  z-index: 2002;
 }
 .user-list {
   padding: 12px;

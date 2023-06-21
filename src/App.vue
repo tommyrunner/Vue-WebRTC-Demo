@@ -111,7 +111,7 @@ watch(
 watch(
   () => userInfo.settings.video,
   () => {
-    if (localVideoRef.value) {
+    if (localVideoRef.value && userInfo.userInfo.username) {
       const localVideo: HTMLVideoElement = localVideoRef.value.$el;
       // 如果处于通话挂断电话，否则直接切换
       if (callState.value === CALL_STATE.CONNECT) onOffCall();
