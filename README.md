@@ -111,74 +111,81 @@ DOMException: Could not start video source
 
 ### 使用IP时不显示视频
 
-+ 报错
+> `WebR	TC`在大多数现代浏览器中要求使用`HTTPS`连接。这是出于**安全考虑**，确保音视频流和数据传输的隐私和完整性。使用`HTTPS`协议可以加密通信，并防止恶意第三方窃听或篡改数据。因此，在使用`WebRTC`时，需要将网页部署在使用有效的`SSL`证书的`https`服务器上。
 
-```shell
-TypeError: Cannot read properties of undefined (reading 'getUserMedia')
-```
+报错: `TypeError: Cannot read properties of undefined (reading 'getUserMedia')`
 
-+ `WebRTC`在大多数现代浏览器中要求使用`HTTPS`连接。这是出于**安全考虑**，确保音视频流和数据传输的隐私和完整性。使用`HTTPS`协议可以加密通信，并防止恶意第三方窃听或篡改数据。因此，在使用`WebRTC`时，需要将网页部署在使用有效的`SSL`证书的`https`服务器上。
++ 解决方法1:
 
-+ 解决办法：在本地使用`nginx`映射`https`路径。
+  + 直接修改浏览器安全策略(只对pc浏览器管用)
+  + 浏览器输入 chrome://flags/#unsafely-treat-insecure-origin-as-secure
+  + 找到 Insecure origins treated as secure 配置输入对于的地址，例如:http://192.168.0.23:5500 (多个可以以,逗号隔开)
+  + 选择Enabled，最后重新进入浏览器。
 
-> 该方式同样是需要`SSL`证书的。
++ 解决方法2:
 
-+ 本地nginx配置
+  + 在本地使用`nginx`映射`https`路径。
 
-```conf
-# ...
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-    keepalive_timeout  65;
+    > 该方式同样是需要`SSL`证书的。
 
-   server {
-      listen       443 ssl;
-      server_name  localhost;
-	  # 配置自己的SSL证书
-      ssl_certificate C://Users//w//Desktop//xxx//xxx.crt;  
-      ssl_certificate_key C://Users//w//Desktop//xxxx//xxx.key;  
-	
-
-       ssl_session_cache    shared:SSL:1m;
-       ssl_session_timeout  5m;
-
-       ssl_ciphers  HIGH:!aNULL:!MD5;
-       ssl_prefer_server_ciphers  on;
-       # 映射前端
-       location / {
-         proxy_pass http://localhost:5173;
-         
-        }
-        # 映射信令服务器
-       location /rtc {
-           proxy_pass  http://127.0.0.1:3003;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection "upgrade";
-        }
-    }
-
-}
-
-```
-
-+ 信令服务器链接修改后，我们前端请求头也得修改，路径在`src->config->index.ts`中
-
-```ts
-- export const baseUrl = process.env.NODE_ENV === "development" ? "http://localhost:3003/" : "https://xxxx.com/";
-+ export const baseUrl = process.env.NODE_ENV === "development" ? "https://ip/" : "https://xxxx.com/";
-```
-
-> 如果你需要部署在线上服务器，pro环境下的域名需要替换。
-
-+ 配置完成后，启动`nginx`，并浏览器访问 https://ip 即可（可能浏览器会警告提示，点击继续访问）
-+ 此时 `getUserMedia` 就可以正常使用，并且可以见链接发至手机，以及其他同一局域网设备，都是可以访问的。
-
-> 当然这种方式是不合格的，但开发阶段可以暂时这样解决问题，后续可以直接部署到线上服务器然后通过`nginx`映射`https`就可以了。
->
-> 通过此方案已经可以实现**局域网视频通话**了，同理远程视频通话，可以部署再线上服务器即可。
+  + 本地nginx配置
+  
+  ```yml
+  # ...
+  http {
+      include       mime.types;
+      default_type  application/octet-stream;
+      sendfile        on;
+      keepalive_timeout  65;
+  
+     server {
+        listen       443 ssl;
+        server_name  localhost;
+  	  # 配置自己的SSL证书
+        ssl_certificate C://Users//w//Desktop//xxx//xxx.crt;  
+        ssl_certificate_key C://Users//w//Desktop//xxxx//xxx.key;  
+  	
+  
+         ssl_session_cache    shared:SSL:1m;
+         ssl_session_timeout  5m;
+  
+         ssl_ciphers  HIGH:!aNULL:!MD5;
+         ssl_prefer_server_ciphers  on;
+         # 映射前端
+         location / {
+           proxy_pass http://localhost:5173;
+           
+          }
+          # 映射信令服务器
+         location /rtc {
+             proxy_pass  http://127.0.0.1:3003;
+             proxy_http_version 1.1;
+             proxy_set_header Upgrade $http_upgrade;
+             proxy_set_header Connection "upgrade";
+          }
+      }
+  
+  }
+  ```
+  
+  
+  
+    + 信令服务器链接修改后，我们前端请求头也得修改，路径在`src->config->index.ts`中
+  
+  ```ts
+  - export const baseUrl = process.env.NODE_ENV === "development" ? "http://localhost:3003/" : "https://xxxx.com/";
+  + export const baseUrl = process.env.NODE_ENV === "development" ? "https://ip/" : "https://xxxx.com/";
+  ```
+  
+  > 如果你需要部署在线上服务器，pro环境下的域名需要替换。
+  
+    + 配置完成后，启动`nginx`，并浏览器访问 https://ip 即可（可能浏览器会警告提示，点击继续访问）
+  
+    + 此时 `getUserMedia` 就可以正常使用，并且可以见链接发至手机，以及其他同一局域网设备，都是可以访问的。
+  
+  > 当然这种方式是不合格的，但开发阶段可以暂时这样解决问题，后续可以直接部署到线上服务器然后通过`nginx`映射`https`就可以了。
+  >
+  > 通过此方案已经可以实现**局域网视频通话**了，同理远程视频通话，可以部署再线上服务器即可。
 
 ## 兼容问题
 
